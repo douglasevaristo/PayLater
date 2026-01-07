@@ -666,7 +666,7 @@
         <a href="https://youtube.com/@douglasevaristo" target="_blank" rel="noreferrer">YouTube</a>
       </div>
 
-      <p style="font-size: 11px;margin-top: 20px;">Versão: 0.1.2</p>
+      <p style="font-size: 11px;margin-top: 20px;">Versão: 0.1.3</p>
     </div>
   </dialog>
 
@@ -968,12 +968,15 @@
     });
 
     exportBtn.addEventListener("click", () => {
-      const data = JSON.stringify(loadCards(), null, 2);
+      const cards = loadCards();
+      const data = JSON.stringify(cards, null, 2);
       const blob = new Blob([data], { type: "application/json" });
       const url = URL.createObjectURL(blob);
+      const stamp = new Date().toISOString().slice(0, 16).replace("T", "_").replace(":", "-");
+      const count = cards.length;
       const link = document.createElement("a");
       link.href = url;
-      link.download = "paylater-cards.json";
+      link.download = `paylater-${stamp}-${count}-cartoes.json`;
       link.click();
       URL.revokeObjectURL(url);
     });
