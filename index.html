@@ -56,7 +56,7 @@
       justify-content: space-between;
       gap: 24px;
       align-items: center;
-      margin-bottom: 15px;
+      margin-bottom: 40px;
       position: sticky;
       top: 0;
       z-index: 1;
@@ -95,9 +95,9 @@
     }
 
     .subtitle {
-      margin: 6px 0 0;
+      margin: 0;
       color: var(--muted);
-      font-size: 1rem;
+      font-size: 0.9rem;
     }
 
     .actions {
@@ -207,7 +207,7 @@
       min-height: 175px;
       display: flex;
       flex-direction: column;
-      justify-content: space-between;
+      justify-content: flex-start;
       box-shadow: var(--card-shadow);
       border: 1px solid rgba(255, 255, 255, 0.08);
       overflow: hidden;
@@ -256,6 +256,12 @@
       z-index: 1;
     }
 
+    .badges {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
     .brand {
       font-weight: 700;
       letter-spacing: 0.08em;
@@ -285,7 +291,7 @@
     }
 
     .brand img {
-      height: 24px;
+      height: 28px;
       width: auto;
       object-fit: contain;
       display: block;
@@ -303,7 +309,7 @@
       flex-wrap: wrap;
       font-size: 0.85rem;
       color: rgba(255, 255, 255, 0.8);
-      margin-top: 12px;
+      margin-top: 10px;
     }
 
     .card-summary span {
@@ -340,20 +346,17 @@
     }
 
     .card-details {
-      position: absolute;
-      left: 20px;
-      right: 20px;
-      bottom: 16px;
+      max-height: 0;
       opacity: 0;
-      transform: translateY(8px);
-      transition: 0.2s ease;
+      overflow: hidden;
+      transition: max-height 0.2s ease, opacity 0.2s ease;
       pointer-events: none;
     }
 
     .card-actions {
       display: flex;
       justify-content: flex-end;
-      margin-top: 12px;
+      margin-top: -25px;
     }
 
     .card-actions .btn {
@@ -366,7 +369,7 @@
     .card:hover .card-details,
     .card.expanded .card-details {
       opacity: 1;
-      transform: translateY(0);
+      max-height: 200px;
       pointer-events: auto;
     }
 
@@ -420,11 +423,16 @@
       gap: 16px;
     }
 
+    .form-grid .span-2 {
+      grid-column: 1 / -1;
+    }
+
     label {
       display: grid;
       gap: 8px;
       font-size: 0.85rem;
       color: var(--muted);
+      min-width: 0;
     }
 
     input, select {
@@ -434,6 +442,8 @@
       padding: 10px 12px;
       border-radius: 12px;
       font-size: 0.95rem;
+      width: 100%;
+      min-width: 0;
     }
 
     .swatches {
@@ -589,7 +599,7 @@
       <div class="title">
         <div>
           <h1>PayLater</h1>
-          <p class="subtitle">Veja seu melhor cartão para usar hoje.</p>
+          <p class="subtitle" id="subtitle">Veja seu melhor cartão para usar hoje.</p>
         </div>
       </div>
     </header>
@@ -609,7 +619,7 @@
     </div>
     <form id="cardForm">
       <div class="form-grid">
-        <label>
+        <label class="span-2">
           Bandeira
           <select name="brand" required>
             <option value="VISA">VISA</option>
@@ -666,7 +676,7 @@
         <a href="https://youtube.com/@douglasevaristo" target="_blank" rel="noreferrer">YouTube</a>
       </div>
 
-      <p style="font-size: 11px;margin-top: 20px;">Versão: 0.1.3</p>
+      <p style="font-size: 11px;margin-top: 20px;">Versão: 0.1.4</p>
     </div>
   </dialog>
 
@@ -675,7 +685,6 @@
 
     const COLORS = [
       "#0f1115",
-      "#1f232a",
       "#c0c7d1",
       "#ef4444",
       "#f97316",
@@ -691,6 +700,7 @@
 
     const cardsEl = document.getElementById("cards");
     const dialog = document.getElementById("cardDialog");
+    const subtitleEl = document.getElementById("subtitle");
 
     const infoDialog = document.getElementById("infoDialog");
     const openInfoBtn = document.getElementById("openInfo");
@@ -713,6 +723,41 @@
 
     const today = () => new Date();
 
+    const pickSubtitle = () => {
+      const hour = today().getHours();
+      const period =
+        hour >= 5 && hour < 12 ? "morning" :
+        hour >= 12 && hour < 18 ? "afternoon" :
+        hour >= 18 && hour < 23 ? "night" :
+        "late";
+
+      const messages = {
+        morning: [
+          "Veja o melhor cartão pra usar agora ☀️ cafezinho e padaria chamam.",
+          "Comece o dia certo: veja o melhor cartão pra usar agora ☕️",
+          "Manhã leve, carteira inteligente ☀️ veja o melhor cartão pra usar agora."
+        ],
+        afternoon: [
+          "Almoço ou mercado?! Veja o melhor cartão pra usar agora 🥗",
+          "Hora do corre: veja o melhor cartão pra usar agora 🛒",
+          "Boa tarde! Aproveite o prazo 💸: veja o melhor cartão pra usar agora."
+        ],
+        night: [
+          "Boa noite! Veja o melhor cartão pra usar agora 🍝 jantar ou delivery?",
+          "Noite de escolhas boas: veja o melhor cartão pra usar agora 🌙",
+          "Boa noite! Veja o melhor cartão pra usar agora 🎬"
+        ],
+        late: [
+          "Virou a madrugada? Veja o melhor cartão pra usar agora 🌙",
+          "Madrugada produtiva: veja o melhor cartão pra usar agora ✨",
+          "Ainda acordado? Veja o melhor cartão pra usar agora 🌃"
+        ]
+      };
+
+      const pool = messages[period] || messages.afternoon;
+      return pool[Math.floor(Math.random() * pool.length)];
+    };
+
     const BRAND_COLORS = {
       VISA: "#0f172a",
       MASTERCARD: "#0b0f12",
@@ -722,6 +767,7 @@
     };
 
     const getBrandDefault = (brand) => BRAND_COLORS[brand] || COLORS[0];
+    const BRAND_ORDER = ["VISA", "MASTERCARD", "MEX", "ELO", "AMEX"];
 
     const BRAND_ICONS = {
       VISA: `<img src="brand/visa.svg" alt="VISA" />`,
@@ -730,8 +776,6 @@
       MEX: `<span class="brand-text">MEX</span>`,
       ELO: `<span class="brand-text">ELO</span>`
     };
-
-    const BRAND_NAME_AFTER = new Set(["MASTERCARD", "AMEX"]);
 
     const createId = () => {
       if (window.crypto && typeof crypto.randomUUID === "function") {
@@ -786,14 +830,14 @@
 
     const renderSwatches = () => {
       swatches.innerHTML = "";
-      const palette = [...COLORS];
-      const brandDefault = getBrandDefault(brandSelect.value);
-      if (!palette.includes(brandDefault)) {
-        palette.unshift(brandDefault);
-      }
-      if (selectedColor && !palette.includes(selectedColor)) {
-        palette.unshift(selectedColor);
-      }
+      const palette = [];
+      const addColor = (color) => {
+        if (!color || palette.includes(color)) return;
+        palette.push(color);
+      };
+      BRAND_ORDER.forEach((brand) => addColor(BRAND_COLORS[brand]));
+      COLORS.forEach((color) => addColor(color));
+      addColor(selectedColor);
       palette.forEach((color) => {
         const swatch = document.createElement("button");
         swatch.type = "button";
@@ -875,20 +919,20 @@
         cardEl.style.setProperty("--card-bg", card.color || BRAND_COLORS[card.brand] || COLORS[0]);
 
         cardEl.innerHTML = `
-          <div class="card-top">
-            <div class="card-title">
-              <div class="brand">
-                ${BRAND_ICONS[card.brand] || ""}
-                ${BRAND_NAME_AFTER.has(card.brand) ? `<span>${card.brand}</span>` : ""}
+            <div class="card-top">
+              <div class="card-title">
+                <div class="brand">
+                  ${BRAND_ICONS[card.brand] || ""}
+                </div>
+                <div class="bank">${card.bank}</div>
               </div>
-              <div class="bank">${card.bank}</div>
+              <div class="badges">
+                <div class="badge">${closeIn} dias</div>
+                <div class="badge">${formatDate(closeDate)}</div>
+              </div>
             </div>
-            <div class="badge">Fecha ${formatDate(closeDate)}</div>
-          </div>
           <div class="card-summary">
-            <span>Final •••• ${card.last4}</span>
-            <span>Fechamento ${card.closeDay}</span>
-            <span>Pagamento ${card.dueDay}</span>
+            <span>•••• ${card.last4}</span>
           </div>
           <div class="card-details">
             <div class="card-insight">
@@ -908,7 +952,13 @@
         });
 
         cardEl.addEventListener("click", () => {
-          cardEl.classList.toggle("expanded");
+          const isExpanded = cardEl.classList.contains("expanded");
+          cardsEl.querySelectorAll(".card.expanded").forEach((expandedCard) => {
+            expandedCard.classList.remove("expanded");
+          });
+          if (!isExpanded) {
+            cardEl.classList.add("expanded");
+          }
         });
 
         cardsEl.appendChild(cardEl);
@@ -923,14 +973,21 @@
     };
 
     const formatDate = (date) => {
-      return date.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
+      const parts = new Intl.DateTimeFormat("pt-BR", {
+        day: "2-digit",
+        month: "short"
+      }).formatToParts(date);
+      const day = parts.find((part) => part.type === "day")?.value || "";
+      const monthRaw = parts.find((part) => part.type === "month")?.value || "";
+      const month = monthRaw.replace(".", "");
+      return `${day} ${month}`.trim();
     };
 
     const headerEl = document.querySelector("header");
     const updateHeaderOpacity = () => {
       const headerHeight = headerEl.offsetHeight || 1;
       const cardsTop = cardsEl.getBoundingClientRect().top;
-      const ratio = Math.min(1, Math.max(0, (cardsTop - 20) / headerHeight));
+      const ratio = Math.min(1, Math.max(0, (cardsTop) / headerHeight));
       headerEl.style.setProperty("--header-opacity", ratio.toFixed(2));
     };
 
@@ -1032,6 +1089,9 @@
     resetDialog();
     renderCards();
     updateHeaderOpacity();
+    if (subtitleEl) {
+      subtitleEl.textContent = pickSubtitle();
+    }
     window.addEventListener("scroll", updateHeaderOpacity, { passive: true });
     window.addEventListener("resize", updateHeaderOpacity);
   </script>
