@@ -1,0 +1,1036 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>PayLater</title>
+  <meta name="description" content="PayLater • saiba qual cartão esta mais longe de pagar." />
+  <link rel="icon" href="icon.png" />
+  <link rel="apple-touch-icon" href="icon.png" />
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0c0f12;
+      --bg-2: #0f1318;
+      --ink: #e8eaed;
+      --muted: #9aa3ad;
+      --line: rgba(255, 255, 255, 0.08);
+      --glow: rgba(125, 168, 255, 0.25);
+      --card-shadow: 0 30px 60px rgba(0, 0, 0, 0.45);
+      --radius: 24px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Space Grotesk", "Avenir Next", "Segoe UI", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 12% 10%, rgba(92, 111, 255, 0.12), transparent 45%),
+        radial-gradient(circle at 80% 0%, rgba(120, 255, 214, 0.1), transparent 40%),
+        linear-gradient(160deg, #0a0d10 0%, #0f141b 55%, #111821 100%);
+    }
+
+    .noise {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 120 120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='120' height='120' filter='url(%23n)' opacity='0.08'/></svg>");
+      mix-blend-mode: soft-light;
+      opacity: 0.5;
+    }
+
+    main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0px 24px 80px;
+    }
+
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 24px;
+      align-items: center;
+      margin-bottom: 15px;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      padding: 35px 0 16px 0;
+      /* background: linear-gradient(180deg, rgba(12, 15, 18, 0.96) 0%, rgba(12, 15, 18, 0.72) 70%, rgba(12, 15, 18, 0) 100%); */
+      backdrop-filter: blur(10px);
+    }
+
+    .title {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      opacity: var(--header-opacity, 1);
+      transition: opacity 0.2s ease;
+    }
+
+    .logo {
+      width: 48px;
+      height: 48px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, #1f2933, #0b0f12);
+      display: grid;
+      place-items: center;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+    }
+
+    .logo span {
+      font-weight: 700;
+      letter-spacing: 1px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(2rem, 3vw, 2.8rem);
+      letter-spacing: -0.02em;
+    }
+
+    .subtitle {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 1rem;
+    }
+
+    .actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--ink);
+      padding: 12px 20px;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: 0.2s ease;
+      
+      letter-spacing: 0.01em;
+    }
+
+    .btn:hover {
+      border-color: rgba(255, 255, 255, 0.2);
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
+    }
+
+    .btn.danger {
+      border-color: rgba(255, 255, 255, 0.15);
+      background: transparent;
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    .btn.primary {
+      border-color: rgba(255, 255, 255, 0.35);
+      background: linear-gradient(140deg, #22c55e, #0ea5e9);
+      color: #061015;
+      box-shadow: 0 12px 28px rgba(14, 165, 233, 0.25);
+      font-weight: 600;
+    }
+
+    .btn.primary:hover {
+      border-color: rgba(255, 255, 255, 0.45);
+      box-shadow: 0 16px 34px rgba(14, 165, 233, 0.32);
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 32px;
+      margin-bottom: 36px;
+    }
+
+    .panel {
+      background: rgba(10, 12, 16, 0.7);
+      border: 1px solid var(--line);
+      padding: 24px;
+      border-radius: var(--radius);
+      box-shadow: var(--card-shadow);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .panel::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(120deg, rgba(130, 180, 255, 0.08), transparent 55%);
+      opacity: 0.4;
+    }
+
+    .panel h2 {
+      margin: 0 0 12px;
+      font-size: 1.2rem;
+    }
+
+    .metric {
+      font-size: clamp(2.4rem, 4vw, 3.6rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+    }
+
+    .metric span {
+      font-size: 1rem;
+      font-weight: 500;
+      color: var(--muted);
+      margin-left: 8px;
+    }
+
+    .hint {
+      color: var(--muted);
+      margin-top: 8px;
+    }
+
+    .cards {
+      display: grid;
+      gap: 24px;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      position: relative;
+      z-index: 2;
+    }
+
+    .card {
+      position: relative;
+      padding: 20px;
+      border-radius: 22px;
+      background: var(--card-bg, #1b1f26);
+      color: #f7f7f8;
+      min-height: 175px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-shadow: var(--card-shadow);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      overflow: hidden;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      cursor: pointer;
+    }
+
+    .card:hover {
+      transform: translateY(-4px);
+      z-index: 2;
+      box-shadow: 0 36px 60px rgba(0, 0, 0, 0.5);
+    }
+
+    .card.expanded {
+      transform: translateY(-6px);
+      z-index: 3;
+      box-shadow: 0 36px 60px rgba(0, 0, 0, 0.5);
+    }
+
+    .card::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at top right, rgba(255, 255, 255, 0.2), transparent 60%);
+      opacity: 0.2;
+      pointer-events: none;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      background: rgba(0, 0, 0, 0.45);
+      border-radius: 999px;
+      font-size: 0.75rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .brand {
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 8px;
+    }
+
+    .card-title {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .bank {
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 0.85rem;
+    }
+
+    .brand svg {
+      width: 64px;
+      height: 20px;
+      display: block;
+    }
+
+    .brand img {
+      height: 24px;
+      width: auto;
+      object-fit: contain;
+      display: block;
+    }
+
+    .brand-text {
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      font-size: 0.8rem;
+    }
+
+    .card-summary {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      font-size: 0.85rem;
+      color: rgba(255, 255, 255, 0.8);
+      margin-top: 12px;
+    }
+
+    .card-summary span {
+      white-space: nowrap;
+    }
+
+    .card-number {
+      font-size: 1.3rem;
+      letter-spacing: 0.2em;
+      margin-top: 0px;
+    }
+
+    .card-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      color: rgba(255, 255, 255, 0.75);
+      margin-top: 12px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .card-insight {
+      display: grid;
+      gap: 6px;
+      margin-top: 12px;
+      font-size: 0.8rem;
+      color: rgba(255, 255, 255, 0.85);
+    }
+
+    .card-insight span {
+      color: rgba(255, 255, 255, 0.6);
+      margin-left: 6px;
+    }
+
+    .card-details {
+      position: absolute;
+      left: 20px;
+      right: 20px;
+      bottom: 16px;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: 0.2s ease;
+      pointer-events: none;
+    }
+
+    .card-actions {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 12px;
+    }
+
+    .card-actions .btn {
+      padding: 6px 12px;
+      font-size: 0.75rem;
+      background: rgba(0, 0, 0, 0.35);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .card:hover .card-details,
+    .card.expanded .card-details {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+
+    .ghost {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px dashed rgba(255, 255, 255, 0.2);
+      color: var(--muted);
+      display: grid;
+      place-content: center;
+      text-align: center;
+      cursor: pointer;
+      transition: 0.2s ease;
+      margin-top: 16px;
+    }
+
+    .ghost:hover {
+      border-color: rgba(255, 255, 255, 0.4);
+      color: var(--ink);
+    }
+
+    dialog {
+      width: min(560px, 92vw);
+      background: #0f141a;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 24px;
+      color: var(--ink);
+      padding: 0;
+      box-shadow: 0 40px 80px rgba(0, 0, 0, 0.6);
+    }
+
+    dialog::backdrop {
+      background: rgba(4, 6, 10, 0.8);
+    }
+
+    form {
+      padding: 24px;
+      display: grid;
+      gap: 16px;
+    }
+
+    .form-header {
+      padding: 20px 24px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    label {
+      display: grid;
+      gap: 8px;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    input, select {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: var(--ink);
+      padding: 10px 12px;
+      border-radius: 12px;
+      font-size: 0.95rem;
+    }
+
+    .swatches {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .swatch {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 2px solid transparent;
+      cursor: pointer;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25);
+      transition: 0.2s ease;
+      position: relative;
+    }
+
+    .swatch.active {
+      border-color: #fff;
+      box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.18);
+      outline: 2px solid rgba(255, 255, 255, 0.8);
+      transform: scale(1.06);
+    }
+
+    .swatch.active::after {
+      content: "✓";
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      font-weight: 700;
+      font-size: 0.85rem;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+    }
+
+    .form-actions {
+      display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 15px;
+    }
+
+    #deleteCard {
+      display: none;
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    .footer {
+      margin-top: 48px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .link-btn {
+      background: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: var(--muted);
+      padding: 8px 14px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      transition: 0.2s ease;
+    }
+
+    .link-btn:hover {
+      color: var(--ink);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .info-body {
+      padding: 20px 24px 24px;
+      display: grid;
+      gap: 16px;
+    }
+
+    .info-body p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.5;
+      font-size: 0.95rem;
+    }
+
+    .info-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .info-actions .btn {
+      padding: 8px 14px;
+      font-size: 0.8rem;
+    }
+
+    .info-links {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .info-links a {
+      color: var(--ink);
+      text-decoration: none;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .info-links a:hover {
+      border-bottom-color: #fff;
+    }
+
+    @media (max-width: 860px) {
+      .hero {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .cards {
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+      }
+
+      .card + .card {
+        margin-top: -38px;
+      }
+
+      .card + .ghost {
+        margin-top: 45px;
+      }
+
+      .card {
+        min-height: 155px;
+      }
+    }
+
+    html, body {
+      overscroll-behavior: none;
+      -webkit-overflow-scrolling: auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="noise"></div>
+  <main>
+    <header>
+      <div class="title">
+        <div>
+          <h1>PayLater</h1>
+          <p class="subtitle">Veja seu melhor cartão para usar hoje.</p>
+        </div>
+      </div>
+    </header>
+
+
+    <section class="cards" id="cards"></section>
+
+    <footer class="footer">
+      <button class="link-btn" id="openInfo" type="button">Entenda o projeto</button>
+    </footer>
+  </main>
+
+  <dialog id="cardDialog">
+    <div class="form-header">
+      <strong>Novo cartão</strong>
+      <button class="btn" id="closeDialog" type="button">Fechar</button>
+    </div>
+    <form id="cardForm">
+      <div class="form-grid">
+        <label>
+          Bandeira
+          <select name="brand" required>
+            <option value="VISA">VISA</option>
+            <option value="MASTERCARD">MASTERCARD</option>
+            <option value="MEX">MEX</option>
+            <option value="ELO">ELO</option>
+            <option value="AMEX">AMEX</option>
+          </select>
+        </label>
+        <label>
+          Banco
+          <input type="text" name="bank" placeholder="Banco do Brasil" required />
+        </label>
+        <label>
+          Final do cartão
+          <input type="text" name="last4" placeholder="1234" maxlength="4" inputmode="numeric" required />
+        </label>
+        <label>
+          Dia de fechamento
+          <input type="number" name="closeDay" min="1" max="31" placeholder="5" required />
+        </label>
+        <label>
+          Dia de pagamento
+          <input type="number" name="dueDay" min="1" max="31" placeholder="15" required />
+        </label>
+      </div>
+      <label>
+        Cor do cartão
+        <div class="swatches" id="swatches"></div>
+      </label>
+      <div class="form-actions">
+        <button class="btn primary" type="submit">Criar novo cartão</button>
+        <button class="btn danger" id="deleteCard" type="button">Apagar cartão</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="infoDialog">
+    <div class="form-header">
+      <strong>Entenda o projeto</strong>
+      <button class="btn" id="closeInfo" type="button">Fechar</button>
+    </div>
+    <div class="info-body">
+      <p>Criei este projeto pra uso pessoal mesmo, me ajudando a escolher qual cartão usar pra aproveitar o máximo de prazo de pagamento entre eles. Até achei algo na internet mas não confiava pq salvava dados na nuvem então fiz esse com foco total em privacidade. Nada e enviado para a nuvem: tudo fica salvo localmente no seu navegador.</p>
+      <p>Se quiser, voce pode exportar seus dados em JSON e importar depois, para manter seu historico.</p>
+      <div class="info-actions">
+        <button class="btn" id="exportData" type="button">Exportar dados</button>
+        <button class="btn" id="importData" type="button">Importar dados</button>
+        <input type="file" id="importFile" accept="application/json" hidden />
+      </div>
+      <p>Se curtiu, compartilhe com quem gosta de controle financeiro e vai gostar da ideia.</p>
+      <div class="info-links">
+        <a href="https://instagram.com/douglasteindica" target="_blank" rel="noreferrer">Instagram</a>
+        <a href="https://youtube.com/@douglasevaristo" target="_blank" rel="noreferrer">YouTube</a>
+      </div>
+
+      <p style="font-size: 11px;margin-top: 20px;">Versão: 0.1.2</p>
+    </div>
+  </dialog>
+
+  <script>
+    const STORAGE_KEY = "paylater.cards";
+
+    const COLORS = [
+      "#0f1115",
+      "#1f232a",
+      "#c0c7d1",
+      "#ef4444",
+      "#f97316",
+      "#f59e0b",
+      "#22c55e",
+      "#14b8a6",
+      "#0ea5e9",
+      "#3b82f6",
+      "#6366f1",
+      "#a855f7",
+      "#ec4899"
+    ];
+
+    const cardsEl = document.getElementById("cards");
+    const dialog = document.getElementById("cardDialog");
+
+    const infoDialog = document.getElementById("infoDialog");
+    const openInfoBtn = document.getElementById("openInfo");
+    const closeInfoBtn = document.getElementById("closeInfo");
+
+    const closeDialogBtn = document.getElementById("closeDialog");
+    const form = document.getElementById("cardForm");
+    const brandSelect = form.elements.brand;
+    const swatches = document.getElementById("swatches");
+    const dialogTitle = document.querySelector("#cardDialog .form-header strong");
+    const submitBtn = form.querySelector("button[type='submit']");
+    const deleteBtn = document.getElementById("deleteCard");
+    const exportBtn = document.getElementById("exportData");
+    const importBtn = document.getElementById("importData");
+    const importFile = document.getElementById("importFile");
+
+    let selectedColor = COLORS[0];
+    let editingId = null;
+    let isColorCustom = false;
+
+    const today = () => new Date();
+
+    const BRAND_COLORS = {
+      VISA: "#0f172a",
+      MASTERCARD: "#0b0f12",
+      MEX: "#c0c7d1",
+      ELO: "#1f2937",
+      AMEX: "#0e7490"
+    };
+
+    const getBrandDefault = (brand) => BRAND_COLORS[brand] || COLORS[0];
+
+    const BRAND_ICONS = {
+      VISA: `<img src="brand/visa.svg" alt="VISA" />`,
+      MASTERCARD: `<img src="brand/mastercard.svg" alt="MASTERCARD" />`,
+      AMEX: `<img src="brand/amex.svg" alt="AMEX" />`,
+      MEX: `<span class="brand-text">MEX</span>`,
+      ELO: `<span class="brand-text">ELO</span>`
+    };
+
+    const BRAND_NAME_AFTER = new Set(["MASTERCARD", "AMEX"]);
+
+    const createId = () => {
+      if (window.crypto && typeof crypto.randomUUID === "function") {
+        return crypto.randomUUID();
+      }
+      return `id-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+    };
+
+    const daysInMonth = (year, monthIndex) => new Date(year, monthIndex + 1, 0).getDate();
+
+    const nextDateForDay = (day, baseDate = today()) => {
+      const year = baseDate.getFullYear();
+      const month = baseDate.getMonth();
+      const todayDate = baseDate.getDate();
+      const targetMonth = todayDate < day ? month : month + 1;
+      const targetYear = targetMonth > 11 ? year + 1 : year;
+      const normalizedMonth = (targetMonth + 12) % 12;
+      const maxDay = daysInMonth(targetYear, normalizedMonth);
+      const safeDay = Math.min(day, maxDay);
+      return new Date(targetYear, normalizedMonth, safeDay);
+    };
+
+    const daysUntil = (date) => {
+      const now = today();
+      const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const end = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      const diffMs = end - start;
+      return Math.max(0, Math.ceil(diffMs / 86400000));
+    };
+
+    const loadCards = () => {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return [];
+      try {
+        return JSON.parse(raw);
+      } catch (error) {
+        return [];
+      }
+    };
+
+    const saveCards = (cards) => {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(cards));
+    };
+
+    const updateActiveSwatches = () => {
+      swatches.querySelectorAll(".swatch").forEach((swatch) => {
+        const isActive = swatch.dataset.color === selectedColor;
+        swatch.classList.toggle("active", isActive);
+        swatch.setAttribute("aria-pressed", isActive ? "true" : "false");
+      });
+    };
+
+    const renderSwatches = () => {
+      swatches.innerHTML = "";
+      const palette = [...COLORS];
+      const brandDefault = getBrandDefault(brandSelect.value);
+      if (!palette.includes(brandDefault)) {
+        palette.unshift(brandDefault);
+      }
+      if (selectedColor && !palette.includes(selectedColor)) {
+        palette.unshift(selectedColor);
+      }
+      palette.forEach((color) => {
+        const swatch = document.createElement("button");
+        swatch.type = "button";
+        swatch.className = "swatch";
+        swatch.style.background = color;
+        swatch.dataset.color = color;
+        swatch.setAttribute("aria-pressed", "false");
+        swatches.appendChild(swatch);
+      });
+      updateActiveSwatches();
+    };
+
+    const resetDialog = () => {
+      form.reset();
+      selectedColor = getBrandDefault(brandSelect.value);
+      isColorCustom = false;
+      editingId = null;
+      dialogTitle.textContent = "Novo cartão";
+      submitBtn.textContent = "Criar novo cartão";
+      deleteBtn.style.display = "none";
+      renderSwatches();
+    };
+
+    const openCreateDialog = () => {
+      resetDialog();
+      dialog.showModal();
+    };
+
+    const openEditDialog = (card) => {
+      editingId = card.id;
+      dialogTitle.textContent = "Editar cartão";
+      submitBtn.textContent = "Salvar alterações";
+      deleteBtn.style.display = "inline-flex";
+      form.elements.bank.value = card.bank;
+      form.elements.brand.value = card.brand;
+      form.elements.last4.value = card.last4;
+      form.elements.closeDay.value = card.closeDay;
+      form.elements.dueDay.value = card.dueDay;
+      const brandDefault = getBrandDefault(card.brand);
+      selectedColor = card.color || brandDefault;
+      isColorCustom = Boolean(card.color && card.color !== brandDefault);
+      renderSwatches();
+      dialog.showModal();
+    };
+
+    const renderCards = () => {
+      const cards = loadCards();
+      cardsEl.innerHTML = "";
+
+      if (cards.length === 0) {
+        const ghost = document.createElement("div");
+        ghost.className = "card ghost";
+        ghost.innerHTML = "<strong>Adicionar cartão</strong><span>Monte sua carteira</span>";
+        ghost.addEventListener("click", openCreateDialog);
+        cardsEl.appendChild(ghost);
+        return;
+      }
+
+      const computedCards = cards.map((card) => {
+        const closeDate = nextDateForDay(card.closeDay);
+        const dueDate = nextDateForDay(card.dueDay);
+        const closeIn = daysUntil(closeDate);
+        const dueIn = daysUntil(dueDate);
+        return { card, closeDate, dueDate, closeIn, dueIn };
+      });
+
+      const sortedCards = computedCards
+        .slice()
+        .sort((a, b) => {
+          const diff = b.closeDate.getTime() - a.closeDate.getTime();
+          if (diff !== 0) return diff;
+          const dueDiff = b.dueDate.getTime() - a.dueDate.getTime();
+          return dueDiff !== 0 ? dueDiff : b.dueIn - a.dueIn;
+        });
+
+      sortedCards.forEach(({ card, closeDate, dueDate, closeIn, dueIn }) => {
+        const cardEl = document.createElement("div");
+        cardEl.className = "card";
+        cardEl.style.setProperty("--card-bg", card.color || BRAND_COLORS[card.brand] || COLORS[0]);
+
+        cardEl.innerHTML = `
+          <div class="card-top">
+            <div class="card-title">
+              <div class="brand">
+                ${BRAND_ICONS[card.brand] || ""}
+                ${BRAND_NAME_AFTER.has(card.brand) ? `<span>${card.brand}</span>` : ""}
+              </div>
+              <div class="bank">${card.bank}</div>
+            </div>
+            <div class="badge">Fecha ${formatDate(closeDate)}</div>
+          </div>
+          <div class="card-summary">
+            <span>Final •••• ${card.last4}</span>
+            <span>Fechamento ${card.closeDay}</span>
+            <span>Pagamento ${card.dueDay}</span>
+          </div>
+          <div class="card-details">
+            <div class="card-insight">
+              <div>Fecha em ${closeIn} dias <span>(${formatDate(closeDate)})</span></div>
+              <div>Paga em ${dueIn} dias <span>(${formatDate(dueDate)})</span></div>
+            </div>
+            <div class="card-actions">
+              <button class="btn" type="button">Editar</button>
+            </div>
+          </div>
+        `;
+
+        const editBtn = cardEl.querySelector(".card-actions .btn");
+        editBtn.addEventListener("click", (event) => {
+          event.stopPropagation();
+          openEditDialog(card);
+        });
+
+        cardEl.addEventListener("click", () => {
+          cardEl.classList.toggle("expanded");
+        });
+
+        cardsEl.appendChild(cardEl);
+      });
+
+      const ghost = document.createElement("div");
+      ghost.className = "card ghost";
+      ghost.innerHTML = "<strong>Novo cartão</strong><span>Adicionar a carteira</span>";
+      ghost.addEventListener("click", openCreateDialog);
+      cardsEl.appendChild(ghost);
+
+    };
+
+    const formatDate = (date) => {
+      return date.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
+    };
+
+    const headerEl = document.querySelector("header");
+    const updateHeaderOpacity = () => {
+      const headerHeight = headerEl.offsetHeight || 1;
+      const cardsTop = cardsEl.getBoundingClientRect().top;
+      const ratio = Math.min(1, Math.max(0, (cardsTop - 20) / headerHeight));
+      headerEl.style.setProperty("--header-opacity", ratio.toFixed(2));
+    };
+
+    closeDialogBtn.addEventListener("click", () => dialog.close());
+    dialog.addEventListener("close", resetDialog);
+    brandSelect.addEventListener("change", () => {
+      const brandDefault = getBrandDefault(brandSelect.value);
+      if (!isColorCustom) {
+        selectedColor = brandDefault;
+      }
+      renderSwatches();
+    });
+
+    swatches.addEventListener("click", (event) => {
+      const button = event.target.closest(".swatch");
+      if (!button) return;
+      const color = button.dataset.color;
+      if (!color) return;
+      selectedColor = color;
+      isColorCustom = color !== getBrandDefault(brandSelect.value);
+      updateActiveSwatches();
+    });
+
+    openInfoBtn.addEventListener("click", () => infoDialog.showModal());
+    closeInfoBtn.addEventListener("click", () => infoDialog.close());
+
+    deleteBtn.addEventListener("click", () => {
+      if (!editingId) return;
+      const ok = window.confirm("Tem certeza que deseja apagar este cartão?");
+      if (!ok) return;
+      const updated = loadCards().filter((item) => item.id !== editingId);
+      saveCards(updated);
+      dialog.close();
+      renderCards();
+    });
+
+    exportBtn.addEventListener("click", () => {
+      const data = JSON.stringify(loadCards(), null, 2);
+      const blob = new Blob([data], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "paylater-cards.json";
+      link.click();
+      URL.revokeObjectURL(url);
+    });
+
+    importBtn.addEventListener("click", () => {
+      importFile.click();
+    });
+
+    importFile.addEventListener("change", async (event) => {
+      const file = event.target.files[0];
+      if (!file) return;
+      try {
+        const text = await file.text();
+        const parsed = JSON.parse(text);
+        if (!Array.isArray(parsed)) {
+          throw new Error("Formato invalido.");
+        }
+        saveCards(parsed);
+        renderCards();
+        infoDialog.close();
+      } catch (error) {
+        window.alert("Nao foi possivel importar. Verifique o arquivo.");
+      } finally {
+        importFile.value = "";
+      }
+    });
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const formData = new FormData(form);
+      const card = {
+        id: editingId || createId(),
+        bank: formData.get("bank").trim(),
+        brand: formData.get("brand"),
+        last4: formData.get("last4").trim(),
+        closeDay: Number(formData.get("closeDay")),
+        dueDay: Number(formData.get("dueDay")),
+        color: selectedColor
+      };
+
+      const cards = loadCards();
+      if (editingId) {
+        const updated = cards.map((item) => (item.id === editingId ? card : item));
+        saveCards(updated);
+      } else {
+        cards.push(card);
+        saveCards(cards);
+      }
+      dialog.close();
+      renderCards();
+    });
+
+    resetDialog();
+    renderCards();
+    updateHeaderOpacity();
+    window.addEventListener("scroll", updateHeaderOpacity, { passive: true });
+    window.addEventListener("resize", updateHeaderOpacity);
+  </script>
+</body>
+</html>
